@@ -4,6 +4,10 @@ service: myhealth
 
 frameworkVersion: '2'
 
+env:
+  parameter-store:
+    SERVERLESS_ACCESS_KEY: serverless-access-key
+
 provider:
   name: aws
   runtime: python3.8
