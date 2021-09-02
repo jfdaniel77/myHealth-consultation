@@ -1,6 +1,9 @@
 version: 0.2
 
-
+env:
+  parameter-store:
+    SERVERLESS_ACCESS_KEY: serverless-access-key
+    
 phases:
   install:
     run-as: root
