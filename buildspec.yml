@@ -1,0 +1,20 @@
+version: 0.2
+
+
+phases:
+  install:
+    run-as: root
+    on-failure: ABORT 
+    runtime-versions:
+      runtime: version
+      runtime: version
+    commands:
+      - npm install
+      - npm install -g serverless
+    
+  
+  build:
+    run-as: root
+    on-failure: ABORT
+    commands:
+      - sls deploy

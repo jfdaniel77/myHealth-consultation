@@ -1,0 +1,22 @@
+org: jfdaniel77
+app: myhealth
+service: myhealth
+
+frameworkVersion: '2'
+
+provider:
+  name: aws
+  runtime: python3.8
+  lambdaHashingVersion: '20201221'
+  stage: dev
+  region: ap-southeast-1
+
+functions:
+  hello:
+    handler: handler.hello
+    events:
+      - http:
+          path: /
+          method: get
+
+  
