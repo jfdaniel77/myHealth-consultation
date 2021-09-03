@@ -1,4 +1,4 @@
-import json
+from json import dumps, loads
 
 
 def hello(event, context):
@@ -6,7 +6,7 @@ def hello(event, context):
         "message": "Welcome to myHealth Service. It is built using Serverless v2.0! Your function executed successfully!"
     }
 
-    response = {"statusCode": 200, "body": json.dumps(body)}
+    response = {"statusCode": 200, "body": dumps(body)}
 
     return response
 
@@ -29,10 +29,13 @@ def submit_vital_sign(event, context):
     else:
         return {"statusCode": 400, "body": "Missing User ID", "headers": {"Content-Type": "text/plain"}}
         
+    payload = loads(event.get("body"))
+        
     body = {
-        "message": "Submit Vital Sign for {}".format(user_id)
+        "message": "Submit Vital Sign for {}".format(user_id),
+        "payload": dumps(payload)
     }
         
-    response = {"statusCode": 200, "body": json.dumps(body), "headers": {"Content-Type": "application/json"}}
+    response = {"statusCode": 200, "body": dumps(body), "headers": {"Content-Type": "application/json"}}
     
     return response
