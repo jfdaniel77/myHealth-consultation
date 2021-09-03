@@ -1,11 +1,8 @@
 version: 0.2
 
 env:
-  variables:
-    key: "S3_BUCKET"
-    
-parameter-store:
-    SERVERLESS_CICD_S3_BUCKET: serverless-cicd-s3-bucket
+    parameter-store:
+        SERVERLESS_CICD_S3_BUCKET: serverless-cicd-s3-bucket
 
 phases:
   install:
@@ -17,8 +14,8 @@ phases:
 
   pre_build:
     commands:
-      - aws s3 cp "s3://$SERVERLESS_CICD_S3_BUCKET/postman-env-files/myHealth.postman_environment.json" ./postman/
-      - aws s3 cp "s3://$SERVERLESS_CICD_S3_BUCKET/postman-env-files/myHealth.postman_collection.json" ./postman/
+      - aws s3 cp "s3://${SERVERLESS_CICD_S3_BUCKET}/postman-env-files/myHealth.postman_environment.json" ./postman/
+      - aws s3 cp "s3://${SERVERLESS_CICD_S3_BUCKET}/postman-env-files/myHealth.postman_collection.json" ./postman/
       - cd ./postman
 
   build:
