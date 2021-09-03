@@ -16,6 +16,7 @@ var/
 .installed.cfg
 *.
 venv/
+node_modules/
 
 # Serverless directories
 .serverless
