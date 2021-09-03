@@ -1,3 +1,6 @@
+import pymongo
+import boto3
+
 from json import dumps, loads
 
 
@@ -30,6 +33,8 @@ def submit_vital_sign(event, context):
         return {"statusCode": 400, "body": "Missing User ID", "headers": {"Content-Type": "text/plain"}}
         
     payload = loads(event.get("body"))
+    
+    
         
     body = {
         "message": "Submit Vital Sign for {}".format(user_id),
