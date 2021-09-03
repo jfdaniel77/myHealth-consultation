@@ -34,11 +34,18 @@ def submit_vital_sign(event, context):
         
     payload = loads(event.get("body"))
     
+    # Connect to MongoDB Atlas
+    ssm_client = boto3.client("ssm")
+    mongodb_url = ssm_client.get_parameter(Name='serverless-mongodb-url', WithDecryption=False)
     
+    mdb_client = pymongo.MongoClient(mongodb_url)
+    db = mdb_client.myhealth
+    vitalsign = db.vitalsign
+    vitalsign_id = vitalsign.insert_one(payload)
         
     body = {
         "message": "Submit Vital Sign for {}".format(user_id),
-        "payload": dumps(payload)
+        "id": vitalsign_id
     }
         
     response = {"statusCode": 200, "body": dumps(body), "headers": {"Content-Type": "application/json"}}
