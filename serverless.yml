@@ -6,9 +6,12 @@ frameworkVersion: '2'
 
 plugins:
   - serverless-python-requirements
+  
 custom:
   pythonRequirements:
     dockerizePip: true 
+
+variablesResolutionMode: 20210326
 
 provider:
   name: aws
@@ -24,5 +27,13 @@ functions:
       - http:
           path: /
           method: get
+          
+  vitalsign:
+    handler: handler.submit_vital_sign
+    role: arn:aws:iam::${ssm:serverless-account-id}:role/myHealth-lambda-role
+    events:
+      - http:
+          path: /vitalsign/{id}
+          method: post
 
   
