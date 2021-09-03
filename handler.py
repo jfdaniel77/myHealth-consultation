@@ -41,11 +41,11 @@ def submit_vital_sign(event, context):
         mongodb_url = ssm_client.get_parameter(Name='serverless-mongodb-url', WithDecryption=False)
         print("MongoDB URL =  {}".format(mongodb_url))
         mdb_client = pymongo.MongoClient(mongodb_url)
-        print("DEBUG 1")
+        print("DEBUG 1: {}".format(mdb_client))
         db = mdb_client.myhealth
-        print("DEBUG 2")
+        print("DEBUG 2: {}".format(db))
         vitalsign = db.vitalsign
-        print("DEBUG 3")
+        print("DEBUG 3: {}".format(vitalsign))
         vitalsign_id = vitalsign.insert_one(payload)
         print("id: {}".format(vitalsign_id))
     except Exception as e:
