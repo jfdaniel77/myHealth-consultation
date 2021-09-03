@@ -1,0 +1,33 @@
+version: 0.2
+
+env:
+  variables:
+    key: "S3_BUCKET"
+    
+parameter-store:
+    SERVERLESS_CICD_S3_BUCKET: serverless-cicd-s3-bucket
+
+phases:
+  install:
+    runtime-versions:
+      nodejs: 14
+    commands:
+      - npm install -g newman
+      - npm install -y jq
+
+  pre_build:
+    commands:
+      - aws s3 cp "s3://${SERVERLESS_CICD_S3_BUCKET}/postman-env-files/myHealth.postman_environment.json" ./postman/
+      - aws s3 cp "s3://${SERVERLESS_CICD_S3_BUCKET}/postman-env-files/myHealth.postman_collection.json" ./postman/
+      - cd ./postman
+
+  build:
+    commands:
+      - echo Build started on `date` from dir `pwd`
+      - newman run myHealth.postman_collection.json --environment PetStoreAPIEnvironment.postman_environment.json -r junit
+
+reports:
+  JUnitReports: # CodeBuild will create a report group called "SurefireReports".
+    files: #Store all of the files
+      - '**/*'
+    base-directory: 'postman/newman' # Location of the reports
