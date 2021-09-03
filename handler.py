@@ -3,8 +3,7 @@ import json
 
 def hello(event, context):
     body = {
-        "message": "Go Serverless v2.0! Your function executed successfully!",
-        "input": event,
+        "message": "Welcome to myHealth Service. It is built using Serverless v2.0! Your function executed successfully!"
     }
 
     response = {"statusCode": 200, "body": json.dumps(body)}
