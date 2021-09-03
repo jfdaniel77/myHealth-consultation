@@ -14,7 +14,7 @@ phases:
 
   pre_build:
     commands:
-      - echo S3 Bucket: ${SERVERLESS_CICD_S3_BUCKET}
+      - echo S3 Bucket: "${SERVERLESS_CICD_S3_BUCKET}"
       - aws s3 cp "s3://myhealth-cicd-pipeline/postman-env-files/myHealth.postman_environment.json" ./postman/
       - aws s3 cp "s3://myhealth-cicd-pipeline/postman-env-files/myHealth.postman_collection.json" ./postman/
       - cd ./postman
