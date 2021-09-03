@@ -10,7 +10,7 @@ parameter-store:
 phases:
   install:
     runtime-versions:
-      nodejs: 14
+      nodejs: 12
     commands:
       - npm install -g newman
       - npm install -y jq
