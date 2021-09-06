@@ -28,6 +28,62 @@ functions:
           path: /
           method: get
           
+  addUser:
+    handler: handler.add_user
+    role: arn:aws:iam::${ssm:serverless-account-id}:role/myHealth-lambda-role
+    events:
+      - http:
+          path: /user
+          method: post
+          
+  getUser:
+    handler: handler.get_user
+    role: arn:aws:iam::${ssm:serverless-account-id}:role/myHealth-lambda-role
+    events:
+      - http:
+          path: /user/{userId}
+          method: get
+          
+  updateUser:
+    handler: handler.update_user
+    role: arn:aws:iam::${ssm:serverless-account-id}:role/myHealth-lambda-role
+    events:
+      - http:
+          path: /user/{userId}
+          method: put
+          
+  deleteUser:
+    handler: handler.delete_user
+    role: arn:aws:iam::${ssm:serverless-account-id}:role/myHealth-lambda-role
+    events:
+      - http:
+          path: /user/{userId}
+          method: delete
+  
+  searchDoctor:
+    handler: handler.search_doctor
+    role: arn:aws:iam::${ssm:serverless-account-id}:role/myHealth-lambda-role
+    events:
+      - http:
+          path: /user/doctor
+          method: get
+          
+  searchPatient:
+    handler: handler.search_patient
+    role: arn:aws:iam::${ssm:serverless-account-id}:role/myHealth-lambda-role
+    events:
+      - http:
+          path: /user/patient
+          method: get  
+          
+  getSpecialty:
+    handler: handler.get_specialty
+    role: arn:aws:iam::${ssm:serverless-account-id}:role/myHealth-lambda-role
+    events:
+      - http:
+          path: /specialty
+          method: get  
+          
   vitalsign:
     handler: handler.submit_vital_sign
     role: arn:aws:iam::${ssm:serverless-account-id}:role/myHealth-lambda-role
@@ -36,4 +92,8 @@ functions:
           path: /vitalsign/{id}
           method: post
 
+package:
+  patterns:
+    - '!node_modules/**'
+    - '!venv/**'
   
