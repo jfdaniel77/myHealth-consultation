@@ -1,4 +1,3 @@
-import pymongo
 import boto3
 
 from sqlalchemy.orm import declarative_base
@@ -36,40 +35,6 @@ def hello(event, context):
         "event": event
     }
     """
-
-# Submit Vital Sign
-def submit_vital_sign(event, context):
-    print("{} - Submit Vital Sign".format(LOGPREFIX))
-    user_id = ''
-    
-    # Get input parameter
-    if event.get("pathParameters") and event.get("pathParameters").get("id"):
-        user_id = event.get("pathParameters").get("id")
-    else:
-        return {"statusCode": 400, "body": "Missing User ID", "headers": {"Content-Type": "text/plain"}}
-        
-    payload = loads(event.get("body"))
-    print("{} - id: {} and payload: {}".format(LOGPREFIX, user_id, payload))
-
-    mdb_client = pymongo.MongoClient("mongodb+srv://myhealth-user:LKPnvE037i5ZLjc6@sg-cluster.8go0w.mongodb.net/admin?retryWrites=true&w=majority")
-    print("DEBUG 1: {}".format(mdb_client))
-    db = mdb_client['myhealth']
-    print("DEBUG 2: {}".format(db))
-    vitalsign = db['vitalsign']
-    print("DEBUG 3: {}".format(vitalsign))
-    vitalsign_id = vitalsign.insert_one(payload)
-    print("id: {}".format(vitalsign_id))
-    
-    vitalsign_id = 'test'
-        
-    body = {
-        "message": "Submit Vital Sign for {}".format(user_id),
-        "id": vitalsign_id
-    }
-        
-    response = {"statusCode": 200, "body": dumps(body), "headers": {"Content-Type": "application/json"}}
-    
-    return response
     
 # Add User
 def add_user(event, context):
@@ -102,9 +67,9 @@ def add_user(event, context):
         response_payload = {
             "message": "Missing Payload"
         }
-        return {"statusCode": 400, "body": dumps(response_payload), "headers": {"Content-Type": "application/json"}}
+        return {"statusCode": 400, "body": dumps(response_payload), "headers": {"Content-Type": "application/json", "Access-Control-Allow-Origin": "*"}}
         
-    return {"statusCode": 200, "body": dumps(response_payload), "headers": {"Content-Type": "application/json"}}
+    return {"statusCode": 200, "body": dumps(response_payload), "headers": {"Content-Type": "application/json", "Access-Control-Allow-Origin": "*"}}
     
 # Update User Detail
 def update_user(event, context):
@@ -120,7 +85,7 @@ def update_user(event, context):
         response_payload = {
             "message": "Missing User ID"
         }
-        return {"statusCode": 400, "body": dumps(response_payload), "headers": {"Content-Type": "application/json"}}
+        return {"statusCode": 400, "body": dumps(response_payload), "headers": {"Content-Type": "application/json", "Access-Control-Allow-Origin": "*"}}
         
     payload = loads(event.get("body"))
     
@@ -144,9 +109,9 @@ def update_user(event, context):
         response_payload = {
             "message": "Missing Payload"
         }
-        return {"statusCode": 400, "body": dumps(response_payload), "headers": {"Content-Type": "application/json"}}
+        return {"statusCode": 400, "body": dumps(response_payload), "headers": {"Content-Type": "application/json", "Access-Control-Allow-Origin": "*"}}
         
-    return {"statusCode": 200, "body": dumps(response_payload), "headers": {"Content-Type": "application/json"}}
+    return {"statusCode": 200, "body": dumps(response_payload), "headers": {"Content-Type": "application/json", "Access-Control-Allow-Origin": "*"}}
     
 # Delete user
 def delete_user(event, context):
@@ -160,7 +125,7 @@ def delete_user(event, context):
         response_payload = {
             "message": "Missing User ID"
         }
-        return {"statusCode": 400, "body": dumps(response_payload), "headers": {"Content-Type": "application/json"}}
+        return {"statusCode": 400, "body": dumps(response_payload), "headers": {"Content-Type": "application/json", "Access-Control-Allow-Origin": "*"}}
         
     if (user_id):
         mssql_url = get_parameter_value('serverless-mssql-url')
@@ -175,9 +140,10 @@ def delete_user(event, context):
         response_payload = {
             "message": "Missing ID"
         }
-        return {"statusCode": 400, "body": dumps(response_payload), "headers": {"Content-Type": "application/json"}}
+        return {"statusCode": 400, "body": dumps(response_payload), "headers": {"Content-Type": "application/json", "Access-Control-Allow-Origin": "*"}}
         
     return {"statusCode": 204}
+
 
 # Get User detail
 def get_user(event, context):
@@ -187,13 +153,13 @@ def get_user(event, context):
     
     # Get input parameter
     user_id = None
-    if event.get("pathParameters") and event.get("pathParameters").get("email"):
-        user_id = event.get("pathParameters").get("email")
+    if event.get("pathParameters") and event.get("pathParameters").get("userId"):
+        user_id = event.get("pathParameters").get("userId")
     else:
         response_payload = {
             "message": "Missing User ID"
         }
-        return {"statusCode": 400, "body": dumps(response_payload), "headers": {"Content-Type": "application/json"}}
+        return {"statusCode": 400, "body": dumps(response_payload), "headers": {"Content-Type": "application/json", "Access-Control-Allow-Origin": "*"}}
         
     if (user_id):
         mssql_url = get_parameter_value('serverless-mssql-url')
@@ -218,19 +184,19 @@ def get_user(event, context):
             
     else:
         response_payload = {
-            "message": "Missing User ID"
+            "message": "Missing Email"
         }
-        return {"statusCode": 400, "body": dumps(response_payload), "headers": {"Content-Type": "application/json"}}
+        return {"statusCode": 400, "body": dumps(response_payload), "headers": {"Content-Type": "application/json", "Access-Control-Allow-Origin": "*"}}
         
-    return {"statusCode": 200, "body": dumps(response_payload, default=str), "headers": {"Content-Type": "application/json"}}
+    return {"statusCode": 200, "body": dumps(response_payload, default=str), "headers": {"Content-Type": "application/json", "Access-Control-Allow-Origin": "*"}}
     
 # Search doctor
 def search_doctor(event, context):
     print("{} - Search Doctor".format(LOGPREFIX))
     
     list_doctor = []
-    keyword_specialty = ''
-    keyword_name = ''
+    keyword_specialty = ""
+    keyword_name = ""
     
     # Get input parameter
     if event.get("queryStringParameters"): 
@@ -238,7 +204,7 @@ def search_doctor(event, context):
             keyword_specialty = event.get("queryStringParameters").get("specialty")
         
         if event.get("queryStringParameters").get("name"):
-            keyword_name = event.get("queryStringParameters").get("name")
+            keyword_name = "%{}%".format(event.get("queryStringParameters").get("name"))
             
     # Construct SQL Query
     final_query = ""
@@ -255,12 +221,12 @@ def search_doctor(event, context):
     
         specialty_query = """
                       AND A.USER_ID IN (SELECT DOCTOR_C FROM DOCTOR_SPECIALTY M, SPECIALTY N 
-                      WHERE M.SPECIALTY_C = N.SPECIALTY_C AND N.SPECIALTY_T = '{}')
-                      """.format(keyword_specialty)
+                      WHERE M.SPECIALTY_C = N.SPECIALTY_C AND N.SPECIALTY_T = :SPECIALTY)
+                      """
             
         fullname_query = """
-                     AND A.FULLNAME LIKE '%{}%'
-                     """.format(keyword_name)
+                     AND A.FULLNAME LIKE :NAME
+                     """
         
         final_query = "{} {} {}".format(main_query, specialty_query, fullname_query)
 
@@ -268,15 +234,15 @@ def search_doctor(event, context):
         
         specialty_query = """
                       AND A.USER_ID IN (SELECT DOCTOR_C FROM DOCTOR_SPECIALTY M, SPECIALTY N 
-                      WHERE M.SPECIALTY_C = N.SPECIALTY_C AND N.SPECIALTY_T = '{}')
-                      """.format(keyword_specialty)
+                      WHERE M.SPECIALTY_C = N.SPECIALTY_C AND N.SPECIALTY_T = :SPECIALTY)
+                      """
     
         final_query = "{} {}".format(main_query, specialty_query)
         
     elif keyword_name:
         fullname_query = """
-                     AND A.FULLNAME LIKE '%{}%'
-                     """.format(keyword_name)
+                     AND A.FULLNAME LIKE :NAME
+                     """
         
         final_query = "{} {}".format(main_query, fullname_query)
         
@@ -287,7 +253,7 @@ def search_doctor(event, context):
     engine = create_engine(mssql_url)
     
     with Session(engine) as session:
-        qs = session.execute(final_query)
+        qs = session.execute(final_query, {"NAME": keyword_name, "SPECIALTY": keyword_specialty})
     
         for q in qs:
             doctor = {
@@ -310,8 +276,13 @@ def search_doctor(event, context):
             else:            
                 doctor = temp.get(doctor.get("USER_ID"))
                 doctor.get('SPECIALTY').append(specialty)
+        
+    # Get Location        
+    for doctor in list_doctor:
+        doctorId = doctor.get("USER_ID")
+        doctor['LOCATION'] = get_doctor_location(doctorId)
     
-    return {"statusCode": 200, "body": dumps(list_doctor, default=str), "headers": {"Content-Type": "application/json"}}
+    return {"statusCode": 200, "body": dumps(list_doctor, default=str), "headers": {"Content-Type": "application/json", "Access-Control-Allow-Origin": "*"}}
 
 # Search doctor
 def search_patient(event, context):
@@ -328,7 +299,7 @@ def search_patient(event, context):
         response_payload = {
             "message": "Missing name keyword"
         }
-        return {"statusCode": 400, "body": dumps(response_payload), "headers": {"Content-Type": "application/json"}}
+        return {"statusCode": 400, "body": dumps(response_payload), "headers": {"Content-Type": "application/json", "Access-Control-Allow-Origin": "*"}}
             
     # Construct SQL Query
     final_query = """
@@ -358,7 +329,7 @@ def search_patient(event, context):
             
             list_patient.append(patient)
         
-    return {"statusCode": 200, "body": dumps(list_patient, default=str), "headers": {"Content-Type": "application/json"}}
+    return {"statusCode": 200, "body": dumps(list_patient, default=str), "headers": {"Content-Type": "application/json", "Access-Control-Allow-Origin": "*"}}
     
 # Get list of specialty
 def get_specialty(event, context):
@@ -380,7 +351,38 @@ def get_specialty(event, context):
             
             list_specialty.append(specialty)
             
-    return {"statusCode": 200, "body": dumps(list_specialty, default=str), "headers": {"Content-Type": "application/json"}}
+    return {"statusCode": 200, "body": dumps(list_specialty, default=str), "headers": {"Content-Type": "application/json", "Access-Control-Allow-Origin": "*"}}
+    
+# Get Location
+def get_doctor_location(doctorId):
+    print("{} - Get Location".format(LOGPREFIX))
+    print("{} - Doctor Id: {}".format(LOGPREFIX, doctorId))
+    
+    list_location = []
+    
+    query = """
+            SELECT C.LOCATION_C, C.LOCATION_NAME, C.LOCATION_ADDRESS FROM APP_USER A, DOCTOR_LOCATION B, LOCATION C
+            WHERE A.USER_ID = B.DOCTOR_C
+            AND B.LOCATION_C = C.LOCATION_C
+            AND A.USER_ID = :USER_ID
+            """
+    
+    mssql_url = get_parameter_value('serverless-mssql-url')
+    engine = create_engine(mssql_url)
+    
+    with Session(engine) as session:
+        qs = session.execute(query, {"USER_ID": doctorId})
+        
+        for q in qs:
+            location = {
+                "LOCATION_C": q.LOCATION_C,
+                "LOCATION_NAME": q.LOCATION_NAME.strip(),
+                "LOCATION_ADDRESS": q.LOCATION_ADDRESS.strip()
+            }
+            
+            list_location.append(location)
+    
+    return list_location
     
 # Common functions
 def get_parameter_value(key):

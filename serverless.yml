@@ -27,6 +27,7 @@ functions:
       - http:
           path: /
           method: get
+          cors: true
           
   addUser:
     handler: handler.add_user
@@ -35,6 +36,7 @@ functions:
       - http:
           path: /user
           method: post
+          cors: true
           
   getUser:
     handler: handler.get_user
@@ -43,6 +45,7 @@ functions:
       - http:
           path: /user/{userId}
           method: get
+          cors: true
           
   updateUser:
     handler: handler.update_user
@@ -59,14 +62,17 @@ functions:
       - http:
           path: /user/{userId}
           method: delete
+          cors: true
   
   searchDoctor:
     handler: handler.search_doctor
     role: arn:aws:iam::${ssm:serverless-account-id}:role/myHealth-lambda-role
+    timeout: 30
     events:
       - http:
           path: /user/doctor
           method: get
+          cors: true
           
   searchPatient:
     handler: handler.search_patient
@@ -75,6 +81,7 @@ functions:
       - http:
           path: /user/patient
           method: get  
+          cors: true
           
   getSpecialty:
     handler: handler.get_specialty
@@ -82,15 +89,172 @@ functions:
     events:
       - http:
           path: /specialty
-          method: get  
+          method: get
+          cors: true
           
-  vitalsign:
-    handler: handler.submit_vital_sign
+  listAppointment:
+    handler: appointment.health_check
     role: arn:aws:iam::${ssm:serverless-account-id}:role/myHealth-lambda-role
     events:
       - http:
-          path: /vitalsign/{id}
+          path: /appointment
+          method: get
+          cors: true
+          
+  vitalsign:
+    handler: vitalsign.submit_vital_sign
+    role: arn:aws:iam::${ssm:serverless-account-id}:role/myHealth-lambda-role
+    events:
+      - http:
+          path: /vitalsign/{userid}
           method: post
+          cors: true
+          
+  vitalsignMqtt:
+    handler: vitalsign.consume_vital_sign
+    role: arn:aws:iam::${ssm:serverless-account-id}:role/myHealth-lambda-role
+    events:
+      - eventBridge:
+          schedule: rate(10 minutes)
+          
+  addFeedback:
+    handler: feedback.submit_feedback
+    role: arn:aws:iam::${ssm:serverless-account-id}:role/myHealth-lambda-role
+    events:
+      - http:
+          path: /feedback/{userid}
+          method: post
+          cors: true
+          
+  getFeedback:
+    handler: feedback.get_feedback
+    role: arn:aws:iam::${ssm:serverless-account-id}:role/myHealth-lambda-role
+    events:
+      - http:
+          path: /feedback/{userid}
+          method: get
+          cors: true
+          
+  appointmentBooking:
+    handler: appointment.create_appointment_booking
+    role: arn:aws:iam::${ssm:serverless-account-id}:role/myHealth-lambda-role
+    events:
+      - http:
+          path: /appointment/booking
+          method: post
+          cors: true
+            
+  appointmentStatus:
+    handler: appointment.get_appointment_booking_status
+    role: arn:aws:iam::${ssm:serverless-account-id}:role/myHealth-lambda-role
+    events:
+      - http:
+          path: /appointment/booking/{token}
+          method: get
+          cors: true
+              
+  appointmentConfirm:
+    handler: appointment.confirm_appointment_booking
+    role: arn:aws:iam::${ssm:serverless-account-id}:role/myHealth-lambda-role
+    events:
+      - http:
+          path: /appointment/booking/{token}
+          method: put
+          cors: true
+              
+  appointmentPurge:
+    handler: appointment.purge_appointment_booking
+    role: arn:aws:iam::${ssm:serverless-account-id}:role/myHealth-lambda-role
+    events:
+      - eventBridge:
+          schedule: rate(15 minutes)
+          
+  appointmentDone:
+    handler: appointment.complete_appointment
+    role: arn:aws:iam::${ssm:serverless-account-id}:role/myHealth-lambda-role
+    events:
+      - eventBridge:
+          schedule: cron(0 3 * * ? *)
+          
+  appointmentWorker:
+    handler: appointment.store_appointment_booking
+    role: arn:aws:iam::${ssm:serverless-account-id}:role/myHealth-lambda-role
+    provisionedConcurrency: 1
+    events:
+      - sqs: arn:aws:sqs:ap-southeast-1:${ssm:serverless-account-id}:myhealth-appointment.fifo
+          
+  appointmentListPatient:
+    handler: appointment.get_patient_appointment
+    role: arn:aws:iam::${ssm:serverless-account-id}:role/myHealth-lambda-role
+    events:
+        - http:
+            path: /appointment/patient/{patientId}
+            method: get
+            cors: true
+            
+  appointmentListDoctor:
+    handler: appointment.get_doctor_appointment
+    role: arn:aws:iam::${ssm:serverless-account-id}:role/myHealth-lambda-role
+    events:
+        - http:
+            path: /appointment/doctor/{doctorId}
+            method: get
+            cors: true
+            
+  appointmentDeletePatient:
+    handler: appointment.delete_patient_appointment
+    role: arn:aws:iam::${ssm:serverless-account-id}:role/myHealth-lambda-role
+    events:
+        - http:
+            path: /appointment/patient/{patientId}/{appointmentId}
+            method: delete
+            cors: true
+            
+  
+  appointmentAvailability:
+    handler: appointment.get_available_appointment_slot
+    role: arn:aws:iam::${ssm:serverless-account-id}:role/myHealth-lambda-role
+    events:
+        - http:
+            path: /appointment/availbility/{patientId}/{doctorId}
+            method: get
+            cors: true
+            
+  addMedicalRecord:
+    handler: medrec.submit_medical_record
+    role: arn:aws:iam::${ssm:serverless-account-id}:role/myHealth-lambda-role
+    events:
+        - http:
+            path: /medrec
+            method: post
+            cors: true
+            
+  updateMedicalRecord:
+    handler: medrec.update_medical_record
+    role: arn:aws:iam::${ssm:serverless-account-id}:role/myHealth-lambda-role
+    events:
+        - http:
+            path: /medrec/{patientId}
+            method: put
+            cors: true
+            
+  deleteMedicalRecord:
+    handler: medrec.delete_medical_record
+    role: arn:aws:iam::${ssm:serverless-account-id}:role/myHealth-lambda-role
+    events:
+        - http:
+            path: /medrec/{patientId}/{medrecId}
+            method: delete
+            cors: true
+              
+  getMedicalRecord:
+    handler: medrec.get_medical_record
+    role: arn:aws:iam::${ssm:serverless-account-id}:role/myHealth-lambda-role
+    events:
+        - http:
+            path: /medrec/{patientId}
+            method: get
+            cors: true
 
 package:
   patterns:
