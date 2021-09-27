@@ -10,6 +10,7 @@ plugins:
 custom:
   pythonRequirements:
     dockerizePip: true 
+    useDownloadCache: false
 
 variablesResolutionMode: 20210326
 
@@ -110,12 +111,14 @@ functions:
           method: post
           cors: true
           
-  vitalsignMqtt:
+  getVitalsign:
     handler: vitalsign.consume_vital_sign
     role: arn:aws:iam::${ssm:serverless-account-id}:role/myHealth-lambda-role
     events:
-      - eventBridge:
-          schedule: rate(10 minutes)
+      - http:
+          path: /vitalsign/record/{userId}
+          method: get
+          cors: true
           
   addFeedback:
     handler: feedback.submit_feedback
@@ -179,7 +182,7 @@ functions:
   appointmentWorker:
     handler: appointment.store_appointment_booking
     role: arn:aws:iam::${ssm:serverless-account-id}:role/myHealth-lambda-role
-    provisionedConcurrency: 1
+    # provisionedConcurrency: 1
     events:
       - sqs: arn:aws:sqs:ap-southeast-1:${ssm:serverless-account-id}:myhealth-appointment.fifo
           
@@ -255,7 +258,44 @@ functions:
             path: /medrec/{patientId}
             method: get
             cors: true
+            
+  getMedicalRecordById:
+    handler: medrec.get_medical_record_by_id
+    role: arn:aws:iam::${ssm:serverless-account-id}:role/myHealth-lambda-role
+    events:
+        - http:
+            path: /medrec/id/{medrecId}
+            method: get
+            cors: true
+            
+  consultationReminder:
+    handler: notification.consultation_reminder
+    role: arn:aws:iam::${ssm:serverless-account-id}:role/myHealth-lambda-role
+    events:
+        - eventBridge:
+          schedule: cron(0 3 * * ? *)
+          
+  getRecommendation:
+    handler: recommendation.get_recommendation
+    role: arn:aws:iam::${ssm:serverless-account-id}:role/myHealth-lambda-role
+    events:
+        - http:
+            path: /recommendation/{patientId}
+            method: get
+            cors: true
 
+  analyzeMedicalProblem:
+    handler: recommendation.analyze_medical_problem
+    role: arn:aws:iam::${ssm:serverless-account-id}:role/myHealth-lambda-role
+    events:
+      - sqs: arn:aws:sqs:ap-southeast-1:${ssm:serverless-account-id}:myhealth-recommendation
+      
+  analyzeVitalSign:
+    handler: recommendation.analyze_vital_sign
+    role: arn:aws:iam::${ssm:serverless-account-id}:role/myHealth-lambda-role
+    events:
+      - sqs: arn:aws:sqs:ap-southeast-1:${ssm:serverless-account-id}:myhealth-alert
+  
 package:
   patterns:
     - '!node_modules/**'

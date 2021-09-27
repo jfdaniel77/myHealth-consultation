@@ -86,7 +86,7 @@ def get_feedback(event, context):
     engine = create_engine(mssql_url)
     
     with Session(engine) as session:
-        qs = session.query(FEEDBACK).filter(FEEDBACK.USER_ID == user_id)
+        qs = session.query(FEEDBACK).filter(FEEDBACK.USER_ID == user_id).order_by(FEEDBACK.CREATED_DT.desc())
         
         for q in qs:
             feedback = {

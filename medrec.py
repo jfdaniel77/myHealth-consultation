@@ -50,6 +50,13 @@ def submit_medical_record(event, context):
                     "ID": medrec_id
                 }
                 session.commit()
+                
+                # send payload to SQS
+                queue_url = get_parameter_value('serverless-recommendation-queue-url')
+                client = boto3.client('sqs')
+                response = client.send_message(QueueUrl=queue_url, MessageBody=dumps(payload))
+                print("{} - Payload has been pushed to SQS".format(LOGPREFIX))
+                
             except Exception as e:
                 print("{} - Exception: {}".format(LOGPREFIX, str(e)))
                 session.rollback()
@@ -96,7 +103,8 @@ def update_medical_record(event, context):
                 session.execute(stmt)
                 
                 if payload.get("MEDICATION"):
-                    update_medication(session, payload.get("MEDICATION"))
+                    delete_medication(session, medrec_id)
+                    submit_medication(session, payload.get("MEDICATION"), medrec_id)  
                     
                 response_payload = {
                     "ID": medrec_id
@@ -146,9 +154,9 @@ def delete_medical_record(event, context):
     
     with Session(engine) as session:
         try:
-            stmt = delete(MEDICAL_RECORD).where(MEDICAL_RECORD.MEDREC_ID == medrec_id).execution_options(synchronize_session="fetch")
-            result = session.execute(stmt)
             delete_medication(session, medrec_id)
+            stmt = delete(MEDICAL_RECORD).where(MEDICAL_RECORD.ID == medrec_id).execution_options(synchronize_session="fetch")
+            result = session.execute(stmt)
             session.commit()
         except Exception as e:
             print("{} - Exception: {}".format(LOGPREFIX, str(e)))
@@ -184,7 +192,7 @@ def get_medical_record(event, context):
                  FROM MEDICAL_RECORD A, APP_USER B
                  WHERE A.CREATED_BY = B.USER_ID
                  AND A.PATIENT_ID = :PATIENT_ID
-                 ORDER BY A.CREATED_DT DESC
+                 ORDER BY A.CREATED_DT DESC;
                  """
                  
         qs = session.execute(query, {"PATIENT_ID": patient_id})
@@ -198,15 +206,73 @@ def get_medical_record(event, context):
                 "ASSESSMENT": q.ASSESSMENT.strip() if q.ASSESSMENT else "",
                 "CREATED_BY_ID": q.CREATED_BY_ID.strip() if q.CREATED_BY_ID else "",
                 "CREATED_BY_NAME": q.FULLNAME.strip() if q.FULLNAME else "",
-                "MEDICATION": get_medication(session, q.ID)
+                "MEDICATION": []
             }
             print("{} - Medical Record:{} ".format(LOGPREFIX, medrec))
             list_medical_record.append(medrec)
+            
+        for medrec in list_medical_record:
+            medrec_id = medrec.get("MEDREC_ID")
+            medrec['MEDICATION'] = get_medication(session, medrec_id)
+            
             
     print("{} - List Medical Record: {}".format(LOGPREFIX, list_medical_record))
             
     return {"statusCode": 200, "body": dumps(list_medical_record, default=str), "headers": {"Content-Type": "application/json", "Access-Control-Allow-Origin": "*"}}        
         
+def get_medical_record_by_id(event, context):
+    print("{} - Get Medical Record by ID".format(LOGPREFIX))
+    
+    list_medical_record = []
+    
+    # Get Input Parameter
+    medrec_id = None
+    if event.get("pathParameters") and event.get("pathParameters").get("medrecId"):
+        medrec_id = event.get("pathParameters").get("medrecId")
+    else:
+        response_payload = {
+            "message": "Missing Medical Record ID"
+        }
+        return {"statusCode": 400, "body": dumps(response_payload), "headers": {"Content-Type": "application/json", "Access-Control-Allow-Origin": "*"}}
+    
+    print("{} - Medical Record ID: {}".format(LOGPREFIX, medrec_id))
+    
+    mssql_url = get_parameter_value('serverless-mssql-url')
+    engine = create_engine(mssql_url)
+    
+    with Session(engine) as session:
+        query =  """
+                 SELECT A.ID, A.PATIENT_ID, A.PROBLEM, A.DIAGNOSIS, A.ASSESSMENT, A.CREATED_BY AS CREATED_BY_ID, B.FULLNAME
+                 FROM MEDICAL_RECORD A, APP_USER B
+                 WHERE A.CREATED_BY = B.USER_ID
+                 AND A.ID = :MEDREC_ID
+                 ORDER BY A.CREATED_DT DESC;
+                 """
+                 
+        qs = session.execute(query, {"MEDREC_ID": medrec_id})
+        
+        for q in qs:
+            medrec = {
+                "MEDREC_ID": q.ID,
+                "PATIENT_ID": q.PATIENT_ID.strip(),
+                "PROBLEM": q.PROBLEM.strip() if q.PROBLEM else "",
+                "DIAGNOSIS": q.DIAGNOSIS.strip() if q.DIAGNOSIS else "",
+                "ASSESSMENT": q.ASSESSMENT.strip() if q.ASSESSMENT else "",
+                "CREATED_BY_ID": q.CREATED_BY_ID.strip() if q.CREATED_BY_ID else "",
+                "CREATED_BY_NAME": q.FULLNAME.strip() if q.FULLNAME else "",
+                "MEDICATION": []
+            }
+            print("{} - Medical Record:{} ".format(LOGPREFIX, medrec))
+            list_medical_record.append(medrec)
+            
+        for medrec in list_medical_record:
+            medrec_id = medrec.get("MEDREC_ID")
+            medrec['MEDICATION'] = get_medication(session, medrec_id)
+            
+            
+    print("{} - List Medical Record: {}".format(LOGPREFIX, list_medical_record))
+            
+    return {"statusCode": 200, "body": dumps(list_medical_record, default=str), "headers": {"Content-Type": "application/json", "Access-Control-Allow-Origin": "*"}}        
         
 def submit_medication(session, payload, medrec_id):
     print("{} - Submit Medication".format(LOGPREFIX))
@@ -214,9 +280,11 @@ def submit_medication(session, payload, medrec_id):
     print("{} - Medical Record ID: {}".format(LOGPREFIX, medrec_id))
     
     for medication in payload:
+        med_id = session.execute(Sequence("MEDICATION_SEQ"))
+        medication["ID"] = med_id
         medication["MEDREC_ID"] = medrec_id
         row = mapping_MEDICATION(medication)
-        session.add()
+        session.add(row)
     
     print("{} - Submit Medication is done".format(LOGPREFIX))
     
