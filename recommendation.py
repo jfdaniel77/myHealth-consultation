@@ -13,6 +13,7 @@ from neo4j import GraphDatabase
 from json import loads, dumps
 from datetime import datetime, date, timedelta
 from random import randrange, randint, uniform
+from neo4j import GraphDatabase
 
 # Constants
 LOGPREFIX = "myHealth"
@@ -68,18 +69,44 @@ def analyze_medical_problem(event, context):
             print("{} - Assessment: {}".format(LOGPREFIX, assessment))
             print("{} - Medication: {}".format(LOGPREFIX, medication))
             
+            # Analyze clinical text
+            client = boto3.client(service_name='comprehendmedical', region_name='us-east-1')
+            
+            list_entities = []
+            list_medical_condition = []
+            if problem:
+                result_medical = client.detect_entities(Text=problem)
+                entities = result_medical['Entities']
+                list_entities.extend(entities)
+            
+            if diagnosis:
+                result_medical = client.detect_entities(Text=diagnosis)
+                entities = result_medical['Entities']
+                list_entities.extend(entities)
+                
+            list_category = ["MEDICAL_CONDITION", "DIAGNOSIS"]
+            for entity in list_entities:
+                if entity.get("Category") in list_category:
+                    if entity.get("Text") not in list_medical_condition:
+                        list_medical_condition.append(entity.get("Text"))
+                        
+            print("{} - Condition: {}".format(LOGPREFIX, list_medical_condition))
+            
             # Get recommendation from GraphDB
+            list_recommendation = get_recommendation_graphdb(list_medical_condition)
             
-            message = "Visual Acuity Study ; Result: right eye 20/20, left eye 20/20"
+            if list_recommendation and len(list_recommendation) > 0:
+                message = " ; ".join(list_recommendation)
+                print("{} - Recommendation to be stored to DB: {}".format(LOGPREFIX, message))
             
-            # Store to MSSQL
-            payload_db = {
-                "ID": "",
-                "PATIENT_ID": patient_id,
-                "MESSAGE_T": message,
-                "MSG_TP_T": "MEDICAL_RECORD"
-            }
-            list_payload.append(payload_db)
+                # Store to MSSQL
+                payload_db = {
+                    "ID": "",
+                    "PATIENT_ID": patient_id,
+                    "MESSAGE_T": message,
+                    "MSG_TP_T": "MEDICAL_RECORD"
+                }
+                list_payload.append(payload_db)
             
     insert_records(list_payload)
     
@@ -272,7 +299,7 @@ def analyze_heart_rate(value, patientId):
     if age < 25:
         if value < 120 and value > 170:
             response = {
-                "message": "Heart Rate is not normal"
+                "message": "Your heart Rate is not normal"
             }
         else:
             response = {
@@ -282,7 +309,7 @@ def analyze_heart_rate(value, patientId):
     elif age >=25 and age < 30:
         if value < 117 and value > 166:
             response = {
-                "message": "Heart Rate is not normal"
+                "message": "Your heart Rate is not normal"
             }
         else:
             response = {
@@ -292,7 +319,7 @@ def analyze_heart_rate(value, patientId):
     elif age >= 30 and age < 35:
         if value < 111 and value > 157:
             response = {
-                "message": "Heart Rate is not normal"
+                "message": "Your heart Rate is not normal"
             }
         else:
             response = {
@@ -302,7 +329,7 @@ def analyze_heart_rate(value, patientId):
     elif age >= 35 and age < 40:
         if value < 108 and value > 153:
             response = {
-                "message": "Heart Rate is not normal"
+                "message": "Your heart Rate is not normal"
             }
         else:
             response = {
@@ -312,7 +339,7 @@ def analyze_heart_rate(value, patientId):
     elif age >= 40 and age < 45:
         if value < 105 and value > 149:
             response = {
-                "message": "Heart Rate is not normal"
+                "message": "Your heart Rate is not normal"
             }
         else:
             response = {
@@ -322,7 +349,7 @@ def analyze_heart_rate(value, patientId):
     elif age >= 45 and age < 50:
         if value < 102 and value > 145:
             response = {
-                "message": "Heart Rate is not normal"
+                "message": "Your heart Rate is not normal"
             }
         else:
             response = {
@@ -332,7 +359,7 @@ def analyze_heart_rate(value, patientId):
     elif age >= 50 and age < 55:
         if value < 99 and value > 140:
             response = {
-                "message": "Heart Rate is not normal"
+                "message": "Your heart Rate is not normal"
             }
         else:
             response = {
@@ -342,7 +369,7 @@ def analyze_heart_rate(value, patientId):
     elif age >= 55 and age < 60:
         if value < 96 and value > 136:
             response = {
-                "message": "Heart Rate is not normal"
+                "message": "Your heart Rate is not normal"
             }
         else:
             response = {
@@ -352,7 +379,7 @@ def analyze_heart_rate(value, patientId):
     elif age >= 60 and age < 65:
         if value < 93 and value > 132:
             response = {
-                "message": "Heart Rate is not normal"
+                "message": "Your heart Rate is not normal"
             }
         else:
             response = {
@@ -362,7 +389,7 @@ def analyze_heart_rate(value, patientId):
     elif age >= 65 and age < 70:
         if value < 90 and value > 123:
             response = {
-                "message": "Heart Rate is not normal"
+                "message": "Your heart Rate is not normal"
             }
         else:
             response = {
@@ -402,7 +429,7 @@ def analyze_respiratory_rate(value):
         }
     else:
         response = {
-            "message": "Your respiratory is not normal"
+            "message": "Your respiratory rate is not normal"
         }
     
     print("{} - Respiratory Rate: {}".format(LOGPREFIX, response))
@@ -458,6 +485,8 @@ def get_recommendation_record(userId):
             if msg in temp_list:
                 continue
             
+            temp_list.append(msg)
+            
             data = {
                 "MSG_TP_T": q.MSG_TP_T.strip(),
                 "MESSAGE_T": msg
@@ -493,8 +522,42 @@ def insert_records(records):
 def get_parameter_value(key):
     print("{} - Get Parameter key: {}".format(LOGPREFIX, key))
     ssm_client = boto3.client("ssm")
-    value = ssm_client.get_parameter(Name=key, WithDecryption=False)
+    value = ssm_client.get_parameter(Name=key, WithDecryption=True)
+    # print("{} - key: {} - value: {}".format(LOGPREFIX, key, value.get("Parameter").get("Value")))
     return value.get("Parameter").get("Value")
+    
+def get_recommendation_graphdb(list_medical):
+    print("{} - Get Recommendation from GraphDB".format(LOGPREFIX))
+    
+    list_recommendation = []
+    
+    query = """
+            MATCH (disease:Disease {disease: 'XXX'})-->(precaution) RETURN precaution as text
+            """
+    
+    # Set connection
+    url = get_parameter_value("serverless-graphdb-url")
+    user = get_parameter_value("serverless-graphdb-user")
+    pwd = get_parameter_value("serverless-graphdb-pwd")
+    
+    driver = GraphDatabase.driver(url, auth=(user, pwd))
+    
+    session = driver.session()
+    
+    for condition in list_medical:
+        
+        result = session.run(query.replace('XXX', condition))
+        resp = [item["text"] for item in result]
+        if resp and len(resp) > 0:
+            for item in resp:
+                for key in item.keys(): 
+                    list_recommendation.append(item.get(key))
+    
+    session.close()
+    driver.close()
+    
+    print("{} - Recommendation: {}".format(LOGPREFIX, list_recommendation))
+    return list_recommendation
     
 class RECOMMENDATION(Base):
     __tablename__ = "RECOMMENDATION"
