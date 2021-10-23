@@ -544,7 +544,8 @@ def generate_fake_zoom_link():
     digits = randint(11111111111,99999999999)
     temp = str(uuid.uuid4()).split("-")
     value = "".join(temp)
-    zoom_link = "https://myhealth.zoom.us/j/{}?pwd={}".format(digits, value)
+    # zoom_link = "https://myhealth.zoom.us/j/{}?pwd={}".format(digits, value)
+    zoom_link = "https://letsconnect.app.vtxhub.com/quickstart/?roomName=test"
     print("{} - Zoom link: {}".format(LOGPREFIX, zoom_link))
     return zoom_link
     
