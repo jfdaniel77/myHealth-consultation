@@ -20,7 +20,7 @@ Base = declarative_base()
 
 def hello(event, context):
     body = {
-        "message": "Welcome to myHealth Service. It is built using Serverless v2.0! Your function executed successfully!"
+        "message": "Welcome to myHealth Service v2. It is built using Serverless v2.0! Your function executed successfully!"
     }
 
     response = {"statusCode": 200, "body": dumps(body)}
