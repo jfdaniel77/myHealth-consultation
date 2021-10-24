@@ -70,30 +70,31 @@ def analyze_medical_problem(event, context):
             print("{} - Medication: {}".format(LOGPREFIX, medication))
             
             # Analyze clinical text
-            client = boto3.client(service_name='comprehendmedical', region_name='us-east-1')
+            # client = boto3.client(service_name='comprehendmedical', region_name='us-east-1')
             
-            list_entities = []
-            list_medical_condition = []
-            if problem:
-                result_medical = client.detect_entities(Text=problem)
-                entities = result_medical['Entities']
-                list_entities.extend(entities)
+            # list_entities = []
+            # list_medical_condition = []
+            # if problem:
+            #     result_medical = client.detect_entities(Text=problem)
+            #     entities = result_medical['Entities']
+            #     list_entities.extend(entities)
             
-            if diagnosis:
-                result_medical = client.detect_entities(Text=diagnosis)
-                entities = result_medical['Entities']
-                list_entities.extend(entities)
+            # if diagnosis:
+            #     result_medical = client.detect_entities(Text=diagnosis)
+            #     entities = result_medical['Entities']
+            #     list_entities.extend(entities)
                 
-            list_category = ["MEDICAL_CONDITION", "DIAGNOSIS"]
-            for entity in list_entities:
-                if entity.get("Category") in list_category:
-                    if entity.get("Text") not in list_medical_condition:
-                        list_medical_condition.append(entity.get("Text"))
+            # list_category = ["MEDICAL_CONDITION", "DIAGNOSIS"]
+            # for entity in list_entities:
+            #     if entity.get("Category") in list_category:
+            #         if entity.get("Text") not in list_medical_condition:
+            #             list_medical_condition.append(entity.get("Text"))
                         
-            print("{} - Condition: {}".format(LOGPREFIX, list_medical_condition))
+            # print("{} - Condition: {}".format(LOGPREFIX, list_medical_condition))
             
-            # Get recommendation from GraphDB
-            list_recommendation = get_recommendation_graphdb(list_medical_condition)
+            # # Get recommendation from GraphDB
+            # list_recommendation = get_recommendation_graphdb(list_medical_condition)
+            list_recommendation = []
             
             if list_recommendation and len(list_recommendation) > 0:
                 message = " ; ".join(list_recommendation)
