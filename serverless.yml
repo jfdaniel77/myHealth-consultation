@@ -284,17 +284,7 @@ functions:
             method: get
             cors: true
 
-  analyzeMedicalProblem:
-    handler: recommendation.analyze_medical_problem
-    role: arn:aws:iam::${ssm:serverless-account-id}:role/myHealth-lambda-role
-    events:
-      - sqs: arn:aws:sqs:ap-southeast-1:${ssm:serverless-account-id}:myhealth-recommendation
-      
-  analyzeVitalSign:
-    handler: recommendation.analyze_vital_sign
-    role: arn:aws:iam::${ssm:serverless-account-id}:role/myHealth-lambda-role
-    events:
-      - sqs: arn:aws:sqs:ap-southeast-1:${ssm:serverless-account-id}:myhealth-alert
+  
   
 package:
   patterns:
